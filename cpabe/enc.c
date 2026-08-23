@@ -5,20 +5,17 @@
 #include <string.h>
 #include <unistd.h>
 #include <glib.h>
-// #include <pbc.h>
-// #include <pbc_random.h>
 #include <mcl/bn_c384_256.h>
-
 #include "bswabe.h"
 #include "common.h"
 #include "policy_lang.h"
 
 #ifndef PACKAGE_NAME
-#define PACKAGE_NAME "cpabe"
+#define PACKAGE_NAME "mcpabe"
 #endif
 
 #ifndef PACKAGE_VERSION
-#define PACKAGE_VERSION "0.1"
+#define PACKAGE_VERSION "1.0"
 #endif
 
 char *usage =
@@ -73,7 +70,12 @@ void parse_args(int argc, char **argv)
 		}
 		else if (!strcmp(argv[i], "-d") || !strcmp(argv[i], "--deterministic"))
 		{
-			// pbc_random_set_deterministic(0);
+			int ret = mclBn_init(MCL_BLS12_381, MCLBN_COMPILED_TIME_VAR);
+			if (ret != 0)
+			{
+				printf("err ret=%d\n", ret);
+				exit(1);
+			}
 		}
 		else if (!pub_file)
 		{
@@ -108,7 +110,6 @@ int main(int argc, char **argv)
 	GByteArray *plt;
 	GByteArray *cph_buf;
 	GByteArray *aes_buf;
-	// element_t m;
 	mclBnGT m;
 
 	parse_args(argc, argv);
@@ -132,11 +133,6 @@ int main(int argc, char **argv)
 	plt = suck_file(in_file);
 	file_len = plt->len;
 
-	// mclBnGT_setInt(&m, 16);
-	char buf[1600];
-	mclBnGT_getStr(buf, sizeof(buf), &m, 16);
-	printf(" enc.c -> aes_128_cbc_encrypt -> m: %s\n", buf);
-
 	aes_buf = aes_128_cbc_encrypt(plt, m);
 	g_byte_array_free(plt, 1);
 	mclBnGT_clear(&m);
@@ -146,8 +142,8 @@ int main(int argc, char **argv)
 	g_byte_array_free(cph_buf, 1);
 	g_byte_array_free(aes_buf, 1);
 
-	// if (!keep)
-	// 	unlink(in_file);
+	if (!keep)
+		unlink(in_file);
 
 	return 0;
 }

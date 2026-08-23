@@ -11,20 +11,17 @@
 #include <string.h>
 #include <strings.h>
 #include <glib.h>
-// #include <pbc.h>
-// #include <pbc_random.h>
-
 #include <mcl/bn_c384_256.h>
 #include "bswabe.h"
 #include "common.h"
 #include "policy_lang.h"
 
 #ifndef PACKAGE_NAME
-#define PACKAGE_NAME "cpabe"
+#define PACKAGE_NAME "mcpabe"
 #endif
 
 #ifndef PACKAGE_VERSION
-#define PACKAGE_VERSION "0.1"
+#define PACKAGE_VERSION "1.0"
 #endif
 
 char *usage =
@@ -100,7 +97,12 @@ void parse_args(int argc, char **argv)
 		}
 		else if (!strcmp(argv[i], "-d") || !strcmp(argv[i], "--deterministic"))
 		{
-			// pbc_random_set_deterministic(0);
+			int ret = mclBn_init(MCL_BLS12_381, MCLBN_COMPILED_TIME_VAR);
+			if (ret != 0)
+			{
+				printf("err ret=%d\n", ret);
+				exit(1);
+			}
 		}
 		else if (!pub_file)
 		{
