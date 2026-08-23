@@ -1,5 +1,7 @@
 // gcc ./cpabe/enc.c ./cpabe/common.c ./cpabe/policy_lang.c ./libbswabe-0.9/core.c ./libbswabe-0.9/misc.c -o enc.out `pkg-config --cflags glib-2.0` `pkg-config --libs glib-2.0` -lgmp /usr/local/include/mcl/libmcl.a -lcrypto -lstdc++ -O3 -w
 
+// ./enc.out pub_key plaintext.txt 'att1 and att2 and att3 and att4'
+
 #include <string.h>
 #include <unistd.h>
 #include <glib.h>
@@ -19,119 +21,122 @@
 #define PACKAGE_VERSION "0.1"
 #endif
 
-char* usage =
-"Usage: cpabe-enc [OPTION ...] PUB_KEY FILE [POLICY]\n"
-"\n"
-"Encrypt FILE under the decryption policy POLICY using public key\n"
-"PUB_KEY. The encrypted file will be written to FILE.cpabe unless\n"
-"the -o option is used. The original file will be removed. If POLICY\n"
-"is not specified, the policy will be read from stdin.\n"
-"\n"
-"Mandatory arguments to long options are mandatory for short options too.\n\n"
-" -h, --help               print this message\n\n"
-" -v, --version            print version information\n\n"
-" -k, --keep-input-file    don't delete original file\n\n"
-" -o, --output FILE        write resulting key to FILE\n\n"
-" -d, --deterministic      use deterministic \"random\" numbers\n"
-"                          (only for debugging)\n\n"
-"";
+char *usage =
+	"Usage: cpabe-enc [OPTION ...] PUB_KEY FILE [POLICY]\n"
+	"\n"
+	"Encrypt FILE under the decryption policy POLICY using public key\n"
+	"PUB_KEY. The encrypted file will be written to FILE.cpabe unless\n"
+	"the -o option is used. The original file will be removed. If POLICY\n"
+	"is not specified, the policy will be read from stdin.\n"
+	"\n"
+	"Mandatory arguments to long options are mandatory for short options too.\n\n"
+	" -h, --help               print this message\n\n"
+	" -v, --version            print version information\n\n"
+	" -k, --keep-input-file    don't delete original file\n\n"
+	" -o, --output FILE        write resulting key to FILE\n\n"
+	" -d, --deterministic      use deterministic \"random\" numbers\n"
+	"                          (only for debugging)\n\n"
+	"";
 
-char* pub_file = 0;
-char* in_file  = 0;
-char* out_file = 0;
-int   keep     = 0;
+char *pub_file = 0;
+char *in_file = 0;
+char *out_file = 0;
+int keep = 0;
 
-char* policy = 0;
+char *policy = 0;
 
-void
-parse_args( int argc, char** argv )
+void parse_args(int argc, char **argv)
 {
 	int i;
 
-	for( i = 1; i < argc; i++ )
-		if(      !strcmp(argv[i], "-h") || !strcmp(argv[i], "--help") )
+	for (i = 1; i < argc; i++)
+		if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"))
 		{
 			printf("%s", usage);
 			exit(0);
 		}
-		else if( !strcmp(argv[i], "-v") || !strcmp(argv[i], "--version") )
+		else if (!strcmp(argv[i], "-v") || !strcmp(argv[i], "--version"))
 		{
 			printf(CPABE_VERSION, "-enc");
 			exit(0);
 		}
-		else if( !strcmp(argv[i], "-k") || !strcmp(argv[i], "--keep-input-file") )
+		else if (!strcmp(argv[i], "-k") || !strcmp(argv[i], "--keep-input-file"))
 		{
 			keep = 1;
 		}
-		else if( !strcmp(argv[i], "-o") || !strcmp(argv[i], "--output") )
+		else if (!strcmp(argv[i], "-o") || !strcmp(argv[i], "--output"))
 		{
-			if( ++i >= argc )
+			if (++i >= argc)
 				die(usage);
 			else
 				out_file = argv[i];
 		}
-		else if( !strcmp(argv[i], "-d") || !strcmp(argv[i], "--deterministic") )
+		else if (!strcmp(argv[i], "-d") || !strcmp(argv[i], "--deterministic"))
 		{
 			// pbc_random_set_deterministic(0);
 		}
-		else if( !pub_file )
+		else if (!pub_file)
 		{
 			pub_file = argv[i];
 		}
-		else if( !in_file )
+		else if (!in_file)
 		{
 			in_file = argv[i];
 		}
-		else if( !policy )
+		else if (!policy)
 		{
 			policy = parse_policy_lang(argv[i]);
 		}
 		else
 			die(usage);
 
-	if( !pub_file || !in_file )
+	if (!pub_file || !in_file)
 		die(usage);
 
-	if( !out_file )
+	if (!out_file)
 		out_file = g_strdup_printf("%s.cpabe", in_file);
 
-	if( !policy )
+	if (!policy)
 		policy = parse_policy_lang(suck_stdin());
 }
 
-int
-main( int argc, char** argv )
+int main(int argc, char **argv)
 {
-	bswabe_pub_t* pub;
-	bswabe_cph_t* cph;
+	bswabe_pub_t *pub;
+	bswabe_cph_t *cph;
 	int file_len;
-	GByteArray* plt;
-	GByteArray* cph_buf;
-	GByteArray* aes_buf;
+	GByteArray *plt;
+	GByteArray *cph_buf;
+	GByteArray *aes_buf;
 	// element_t m;
 	mclBnGT m;
 
 	parse_args(argc, argv);
 
 	int ret = mclBn_init(MCL_BLS12_381, MCLBN_COMPILED_TIME_VAR);
-	if (ret != 0) {
+	if (ret != 0)
+	{
 		printf("err ret=%d\n", ret);
 		exit(1);
 	}
 
 	pub = bswabe_pub_unserialize(suck_file(pub_file), 1);
 
-  	if( !(cph = bswabe_enc(pub, m, policy)) )
+	if (!(cph = bswabe_enc(pub, &m, policy)))
 		die("%s", bswabe_error());
 	free(policy);
 
-	
 	cph_buf = bswabe_cph_serialize(cph);
-	printf("bswabbswabe_cph_serialize done\n");
 	bswabe_cph_free(cph);
 
 	plt = suck_file(in_file);
 	file_len = plt->len;
+
+	// mclBnGT_setInt(&m, 16);
+	char buf[1600];
+	mclBnGT_getStr(buf, sizeof(buf), &m, 16);
+	printf(" enc.c -> aes_128_cbc_encrypt -> m: %s\n", buf);
+
 	aes_buf = aes_128_cbc_encrypt(plt, m);
 	g_byte_array_free(plt, 1);
 	mclBnGT_clear(&m);
@@ -141,8 +146,8 @@ main( int argc, char** argv )
 	g_byte_array_free(cph_buf, 1);
 	g_byte_array_free(aes_buf, 1);
 
-	if( !keep )
-		unlink(in_file);
+	// if (!keep)
+	// 	unlink(in_file);
 
 	return 0;
 }

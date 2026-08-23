@@ -33,4 +33,5 @@ $(TARGET_SETUP): $(OBJ_SETUP)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f pairing $(TARGET_SETUP) $(OBJ_SETUP)
+	rm -f pairing
+# 	rm -f pairing $(TARGET_SETUP) $(OBJ_SETUP)
