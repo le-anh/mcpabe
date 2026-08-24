@@ -54,6 +54,33 @@ char *random_string(int length)
 	return str;
 }
 
+void random_mclBnG1(mclBnG1 *P)
+{
+	mclBnFp fp_tmp;
+	mclBnFp_setByCSPRNG(&fp_tmp);
+	mclBnFp_mapToG1(P, &fp_tmp);
+	mclBnFp_clear(&fp_tmp);
+}
+
+void random_mclBnG2(mclBnG2 *Q)
+{
+	mclBnG2_hashAndMapTo(Q, random_string(24), 24);
+}
+
+void random_mclBnGT(mclBnGT *e)
+{
+	mclBnG1 P;
+	mclBnG2 Q;
+
+	random_mclBnG1(&P);
+	random_mclBnG2(&Q);
+
+	mclBn_pairing(e, &P, &Q);
+
+	mclBnG1_clear(&P);
+	mclBnG2_clear(&Q);
+}
+
 void bswabe_setup(bswabe_pub_t **pub, bswabe_msk_t **msk)
 {
 	mclBnFr alpha;
@@ -63,13 +90,8 @@ void bswabe_setup(bswabe_pub_t **pub, bswabe_msk_t **msk)
 
 	mclBnFr_setByCSPRNG(&alpha);
 	mclBnFr_setByCSPRNG(&(*msk)->beta);
-
-	// Random G1 & G2
-	mclBnFr fr_tmp;
-	mclBnFr_setByCSPRNG(&fr_tmp);
-	mclBnFp_mapToG1(&(*pub)->g, &fr_tmp);
-	mclBnFr_clear(&fr_tmp);
-	mclBnG2_hashAndMapTo(&(*pub)->gp, random_string(24), 24);
+	random_mclBnG1(&(*pub)->g);
+	random_mclBnG2(&(*pub)->gp);
 
 	mclBnG2_mul(&(*msk)->g_alpha, &(*pub)->gp, &alpha);
 	mclBnG1_mul(&(*pub)->h, &(*pub)->g, &(*msk)->beta);
@@ -295,18 +317,7 @@ bswabe_cph_t *bswabe_enc(bswabe_pub_t *pub, mclBnGT *m, char *policy)
 	cph->p = parse_policy_postfix(policy);
 
 	/* compute */
-	// mclBnFr_setByCSPRNG(m);
-	mclBnFr fr_tmp;
-	mclBnG1 g1_tmp;
-	mclBnG2 g2_tmp;
-	mclBnFr_setByCSPRNG(&fr_tmp);
-	mclBnFp_mapToG1(&g1_tmp, &fr_tmp);
-	mclBnFr_clear(&fr_tmp);
-	mclBnG2_hashAndMapTo(&g2_tmp, random_string(24), 24);
-	mclBn_pairing(m, &g1_tmp, &g2_tmp);
-	mclBnG1_clear(&g1_tmp);
-	mclBnG2_clear(&g2_tmp);
-
+	random_mclBnGT(m);
 	mclBnFr_setByCSPRNG(&s);
 
 	mclBnGT_pow(&cph->cs, &pub->g_hat_alpha, &s);

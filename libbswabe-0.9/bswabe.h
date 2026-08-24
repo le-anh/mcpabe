@@ -1,5 +1,5 @@
 /*
-  Include glib.h and pbc.h before including this file. Note that this
+  Include glib.h and mcl/bn_c384_256.h before including this file. Note that this
   file should be included at most once.
 */
 
@@ -24,10 +24,7 @@ extern "C"
   typedef struct bswabe_prv_s bswabe_prv_t;
 
   /*
-    A ciphertext. Note that this library only handles encrypting a
-    single group element, so if you want to encrypt something bigger,
-    you will have to use that group element as a symmetric key for
-    hybrid encryption (which you do yourself).
+    A ciphertext.
   */
   typedef struct bswabe_cph_s bswabe_cph_t;
 
@@ -44,9 +41,7 @@ extern "C"
     argument should be a null terminated array of pointers to strings,
     one for each attribute.
   */
-  bswabe_prv_t *bswabe_keygen(bswabe_pub_t *pub,
-                              bswabe_msk_t *msk,
-                              char **attributes);
+  bswabe_prv_t *bswabe_keygen(bswabe_pub_t *pub, bswabe_msk_t *msk, char **attributes);
 
   /*
     Pick a random group element and encrypt it under the specified
@@ -73,7 +68,7 @@ extern "C"
     Returns null if an error occured, in which case a description can be
     retrieved by calling bswabe_error().
   */
-  bswabe_cph_t *bswabe_enc(bswabe_pub_t *pub, mclBnGT *m /*element_t m*/, char *policy);
+  bswabe_cph_t *bswabe_enc(bswabe_pub_t *pub, mclBnGT *m, char *policy);
 
   /*
     Decrypt the specified ciphertext using the given private key,
@@ -83,8 +78,7 @@ extern "C"
     Returns true if decryption succeeded, false if this key does not
     satisfy the policy of the ciphertext (in which case m is unaltered).
   */
-  int bswabe_dec(bswabe_pub_t *pub, bswabe_prv_t *prv,
-                 bswabe_cph_t *cph, mclBnGT *m /* element_t m */);
+  int bswabe_dec(bswabe_pub_t *pub, bswabe_prv_t *prv, bswabe_cph_t *cph, mclBnGT *m);
 
   /*
     Exactly what it seems.

@@ -142,8 +142,8 @@ int main(int argc, char **argv)
 	g_byte_array_free(cph_buf, 1);
 	g_byte_array_free(aes_buf, 1);
 
-	if (!keep)
-		unlink(in_file);
+	// if (!keep)
+	// 	unlink(in_file);
 
 	return 0;
 }

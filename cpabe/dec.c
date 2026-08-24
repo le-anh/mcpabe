@@ -182,8 +182,8 @@ int main(int argc, char **argv)
 
 	spit_file(out_file, plt, 1);
 
-	if (!keep)
-		unlink(in_file);
+	// if (!keep)
+	// 	unlink(in_file);
 
 	/* report ops if necessary */
 	/* 	if( report_ops ) */
