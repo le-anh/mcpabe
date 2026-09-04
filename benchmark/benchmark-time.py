@@ -4,11 +4,11 @@ import time
 from pathlib import Path
 
 
-def measure_enc_time(
+def measure_execution_time(
 	first_attribute=1,
 	last_attribute=50,
 	loops=10000,
-	results_file="benchmark-results.csv",
+	results_file="benchmark-mcpabe-results.csv",
 ):
 	project_dir = Path(__file__).resolve().parent
 	setup_executable = project_dir / "setup.out"
@@ -40,8 +40,25 @@ def measure_enc_time(
 		f"{last_attribute} attributes, {loops:,} loops each..."
 	)
 
+	results_path = project_dir / results_file
+	with results_path.open("a", newline="", encoding="utf-8-sig") as csv_file:
+		writer = csv.writer(csv_file)
+		writer.writerow(
+			[
+				"Loop number",
+				"Number of attributes",
+				"Setup total",
+				"Setup average",
+				"Keygen total",
+				"Keygen average",
+				"Encryption total",
+				"Encryption average",
+				"Decryption total",
+				"Decryption average",
+			]
+		)
+
 	setup_command = [str(setup_executable)]
-	results = []
 	for attribute_count in range(first_attribute, last_attribute + 1):
 		attributes = [f"att{number}" for number in range(1, attribute_count + 1)]
 		policy = " and ".join(attributes)
@@ -114,20 +131,6 @@ def measure_enc_time(
 			)
 		dec_elapsed = time.perf_counter() - start
 
-		results.append(
-			(
-				loops,
-				attribute_count,
-				setup_elapsed,
-				setup_elapsed / loops,
-				keygen_elapsed,
-				keygen_elapsed / loops,
-				enc_elapsed,
-				enc_elapsed / loops,
-				dec_elapsed,
-				dec_elapsed / loops,
-			)
-		)
 		print(
 			f"{attribute_count:>2} attribute(s): "
 			f"setup total {setup_elapsed:.6f}s "
@@ -140,29 +143,25 @@ def measure_enc_time(
 			f"(average {dec_elapsed / loops:.6f}s)"
 		)
 
-	results_path = project_dir / results_file
-	with results_path.open("w", newline="", encoding="utf-8-sig") as csv_file:
-		writer = csv.writer(csv_file)
-		writer.writerow(
-			[
-				"Loop number",
-				"Number of attributes",
-				"Setup total",
-				"Setup average",
-				"Keygen total",
-				"Keygen average",
-				"Encryption total",
-				"Encryption average",
-				"Decryption total",
-				"Decryption average",
-			]
-		)
-		writer.writerows(results)
+		with results_path.open("a", newline="", encoding="utf-8-sig") as csv_file:
+			writer = csv.writer(csv_file)
+			writer.writerow(
+				[
+					loops,
+					attribute_count,
+					setup_elapsed,
+					setup_elapsed / loops,
+					keygen_elapsed,
+					keygen_elapsed / loops,
+					enc_elapsed,
+					enc_elapsed / loops,
+					dec_elapsed,
+					dec_elapsed / loops,
+				]
+			)
 
 	print(f"\nResults exported to {results_path}")
 	print("Setup, keygen, encryption, and decryption time measurement complete.")
-	return results
-
 
 if __name__ == "__main__":
-	measure_enc_time(1, 10, 10)
+	measure_execution_time()
